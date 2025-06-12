@@ -1,123 +1,168 @@
+"""
+Server implementation.
+"""
+
 import socket
 import threading
 import signal
 import sys
+import json
+import tkinter as tk
+from tkinter import ttk, scrolledtext, messagebox
+from datetime import datetime
+from gui.server_gui import ServerGUI
+from utils.logger import Logger
+from utils.constants import DEFAULT_HOST, DEFAULT_PORT
 
-clients = []  # Liste des clients connectés : (id, conn, addr)
-client_id_counter = 0
-lock = threading.Lock()
-server_running = True
-
-def handle_client(client_id, conn, addr):
-    print(f"[+] Client {client_id} connecté depuis {addr[0]}:{addr[1]}")
-
-    while server_running:
-        try:
-            data = conn.recv(4096)
-            if not data:
-                print(f"[-] Client {client_id} déconnecté.")
-                break
-            print(f"[client-{client_id}] {data.decode(errors='ignore')}\n")
-        except:
-            print(f"[!] Erreur avec client {client_id}.")
-            break
-
-    conn.close()
-    with lock:
-        for i, (cid, _, _) in enumerate(clients):
-            if cid == client_id:
-                clients.pop(i)
-                break
-
-def accept_clients(server_socket):
-    global client_id_counter, server_running
-    while server_running:
-        try:
-            conn, addr = server_socket.accept()
-        except OSError:
-            # Socket fermé, on sort proprement
-            break
-        with lock:
-            client_id_counter += 1
-            client_id = client_id_counter
-            clients.append((client_id, conn, addr))
-        threading.Thread(target=handle_client, args=(client_id, conn, addr), daemon=True).start()
-
-def show_clients():
-    print("\n=== Clients connectés ===")
-    with lock:
-        for cid, _, addr in clients:
-            print(f"{cid} - {addr[0]}:{addr[1]}")
-    print("=========================")
-
-def interact_with_client(client_id, conn):
-    print(f"\n[*] Session interactive avec client-{client_id}. Tape 'back' pour revenir au menu.")
-    while True:
-        command = input(f"[client-{client_id}] >> ")
-
-        if command.strip().lower() == "back":
-            print("[*] Retour au menu principal.")
-            break
-        if not command.strip():
-            continue
-
-        try:
-            conn.send(command.encode())
-        except Exception as e:
-            print(f"[!] Erreur lors de l'envoi : {e}")
-            break
-
-def signal_handler(sig, frame):
-    global server_running
-    print("\n[*] Fermeture du serveur, déconnexion des clients...")
-    server_running = False
-    with lock:
-        for _, conn, _ in clients:
+class Server:
+    def __init__(self):
+        """Initialize the server."""
+        self.root = tk.Tk()
+        self.gui = ServerGUI(self.root, self)
+        self.logger = Logger("Server")
+        
+        self.HOST = DEFAULT_HOST
+        self.PORT = DEFAULT_PORT
+        self.server_running = True
+        
+        self.setup_server()
+        self.setup_signal_handlers()
+        
+        # Start accepting connections
+        self.accept_thread = threading.Thread(target=self.accept_clients, daemon=True)
+        self.accept_thread.start()
+    
+    def setup_server(self):
+        """Set up the server socket."""
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server.bind((self.HOST, self.PORT))
+        self.server.listen(5)
+        
+        self.gui.log_message(f"[*] Server listening on {self.HOST}:{self.PORT}...")
+    
+    def setup_signal_handlers(self):
+        """Set up signal handlers for graceful shutdown."""
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+    
+    def handle_signal(self, signum, frame):
+        """Handle system signals."""
+        self.on_closing()
+    
+    def accept_clients(self):
+        """Accept incoming client connections."""
+        while self.server_running:
             try:
-                conn.send("exit".encode())
-                conn.close()
+                conn, addr = self.server.accept()
+                client_id = len(self.gui.clients) + 1
+                
+                # Add client to GUI
+                self.gui.add_client(client_id, addr)
+                # Store the connection
+                self.gui.clients[client_id] = (conn, addr)
+                
+                # Start client handler thread
+                threading.Thread(
+                    target=self.handle_client,
+                    args=(client_id, conn, addr),
+                    daemon=True
+                ).start()
+                
+            except Exception as e:
+                if self.server_running:
+                    self.gui.log_message(f"[!] Error accepting connection: {e}")
+                break
+    
+    def handle_client(self, client_id, conn, addr):
+        """Handle client communication."""
+        self.gui.log_message(f"[+] Client {client_id} connected from {addr[0]}:{addr[1]}")
+        
+        while self.server_running:
+            try:
+                data = conn.recv(4096)
+                if not data:
+                    break
+                
+                try:
+                    message = json.loads(data.decode())
+                    message_type = message.get("type")
+                    content = message.get("content")
+                    
+                    if message_type == "chat":
+                        self.gui.log_chat(f"Client {client_id}", content)
+                    elif message_type == "response":
+                        self.gui.log_message(f"[Client {client_id}] {content}")
+                    elif message_type == "screenshot":
+                        self.gui.display_screenshot(client_id, content)
+                    elif message_type == "exit":
+                        break
+                    
+                except json.JSONDecodeError:
+                    self.gui.log_message(f"[!] Invalid message from client {client_id}")
+                    continue
+                
+            except Exception as e:
+                if self.server_running:
+                    self.gui.log_message(f"[!] Error with client {client_id}: {e}")
+                break
+        
+        # Clean up
+        conn.close()
+        self.gui.remove_client(client_id)
+        self.gui.log_message(f"[-] Client {client_id} disconnected")
+    
+    def send_chat(self, client_id, message):
+        """Send chat message to client."""
+        try:
+            conn, _ = self.gui.clients[client_id]
+            if conn:
+                data = json.dumps({
+                    "type": "chat",
+                    "content": message
+                }).encode()
+                conn.send(data)
+                self.gui.log_chat(f"Client {client_id}", f"You: {message}")
+        except Exception as e:
+            self.gui.log_message(f"[!] Error sending to client {client_id}: {e}")
+    
+    def send_command(self, client_id, command):
+        """Send command to client."""
+        try:
+            conn, _ = self.gui.clients[client_id]
+            if conn:
+                data = json.dumps({
+                    "type": "command",
+                    "content": command
+                }).encode()
+                conn.send(data)
+                self.gui.log_message(f"[*] Command sent to client {client_id}: {command}")
+        except Exception as e:
+            self.gui.log_message(f"[!] Error sending command to client {client_id}: {e}")
+    
+    def on_closing(self):
+        """Handle window closing."""
+        if messagebox.askokcancel("Quit", "Do you really want to quit?"):
+            self.server_running = False
+            
+            # Close server socket
+            try:
+                self.server.close()
             except:
                 pass
-    sys.exit(0)
+            
+            # Close GUI
+            self.root.destroy()
+            sys.exit(0)
+    
+    def start(self):
+        """Start the server."""
+        self.root.mainloop()
 
 def main():
-    global server_running
-
-    HOST = '0.0.0.0'
-    PORT = 9999
-
-    signal.signal(signal.SIGINT, signal_handler)
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind((HOST, PORT))
-    server.listen(5)
-    print(f"[*] Serveur en écoute sur {HOST}:{PORT}...")
-
-    accept_thread = threading.Thread(target=accept_clients, args=(server,), daemon=True)
-    accept_thread.start()
-
-    while server_running:
-        show_clients()
-        try:
-            target_id = int(input("Sélectionne l'ID du client (ou 0 pour quitter) : "))
-            if target_id == 0:
-                print("[*] Arrêt demandé.")
-                signal_handler(None, None)
-                break
-
-            with lock:
-                selected = next((c for c in clients if c[0] == target_id), None)
-
-            if not selected:
-                print("[!] Client non trouvé.")
-                continue
-
-            _, conn, _ = selected
-            interact_with_client(target_id, conn)
-
-        except Exception as e:
-            print(f"[!] Erreur : {e}")
+    server = Server()
+    server.start()
 
 if __name__ == "__main__":
     main()
