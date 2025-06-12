@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 from typing import Optional
 from src.utils.logger import Logger, ChatLogger
+from src.utils.constants import CLIENT_TITLE, CLIENT_WINDOW_SIZE, ICON_PATH
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -25,9 +26,9 @@ class ClientGUI:
         self.root = root
         self.client = client
 
-        # self.root.iconbitmap("chilli.ico")
-        self.root.title("RAT Client")
-        self.root.geometry("800x600")
+        self.root.iconbitmap(ICON_PATH)
+        self.root.title(CLIENT_TITLE)
+        self.root.geometry(CLIENT_WINDOW_SIZE)
         
         self.logger = Logger("ClientGUI")
         self.chat_logger = None  # Will be initialized after creating chat_text
