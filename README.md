@@ -3,5 +3,6 @@
 Il est gentil
 
 ```bash
- pyinstaller server.py # create .exe from py --> dist/server.exe
+pyinstaller server.py # create .exe from py --> dist/server.exe
+pyinstaller --onefile --windowed --icon=chilli.ico client.py
 ```
