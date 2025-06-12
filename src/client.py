@@ -11,9 +11,9 @@ import os
 import base64
 from PIL import ImageGrab
 import io
-from src.gui.client_gui import ClientGUI
-from src.utils.logger import Logger
-from src.utils.constants import SERVER_HOST, SERVER_PORT
+from client_gui import ClientGUI
+from utils.logger import Logger
+from utils.constants import SERVER_HOST, SERVER_PORT
 
 class Client:
     def __init__(self):
@@ -110,10 +110,15 @@ class Client:
         else:
             try:
                 result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-                self.send_message("response", result.decode())
+                if os.name == 'nt':
+                    decoded = result.decode('cp850', errors='replace')
+                else:
+                    decoded = result.decode()
+                self.send_message("response", decoded)
             except subprocess.CalledProcessError as e:
-                self.send_message("response", f"Error: {e.output.decode()}")
-    
+                self.logger.error("CalledProcessError")
+                self.send_message("response", f"Error: {str(e)}")
+
     def open_terminal(self):
         """Open a terminal window."""
         try:

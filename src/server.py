@@ -9,9 +9,9 @@ import sys
 import json
 import tkinter as tk
 from tkinter import messagebox
-from src.gui.server_gui import ServerGUI
-from src.utils.logger import Logger
-from src.utils.constants import DEFAULT_HOST, DEFAULT_PORT
+from server_gui import ServerGUI
+from utils.logger import Logger
+from utils.constants import DEFAULT_HOST, DEFAULT_PORT
 
 class Server:
     def __init__(self):

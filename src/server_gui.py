@@ -5,8 +5,8 @@ Server GUI implementation.
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from typing import Dict, Tuple
-from src.utils.logger import Logger
-from src.utils.constants import SERVER_TITLE, SERVER_WINDOW_SIZE, ICON_PATH
+from utils.logger import Logger
+from utils.constants import SERVER_TITLE, SERVER_WINDOW_SIZE, ICON_PATH
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -26,7 +26,7 @@ class ServerGUI:
         self.root = root
         self.server = server  # Store server reference
 
-        self.root.iconbitmap(ICON_PATH)
+        # self.root.iconbitmap(ICON_PATH)
         self.root.title(SERVER_TITLE)
         self.root.geometry(SERVER_WINDOW_SIZE)  # Augmenté pour accommoder le nouveau panneau
         
