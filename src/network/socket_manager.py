@@ -6,8 +6,8 @@ import socket
 import threading
 import json
 from typing import Optional, Tuple, Dict, Any
-from utils.constants import DEFAULT_HOST, DEFAULT_PORT, BUFFER_SIZE
-from utils.logger import Logger
+from src.utils.constants import DEFAULT_HOST, DEFAULT_PORT, BUFFER_SIZE
+from src.utils.logger import Logger
 
 class SocketManager:
     """Manages socket connections and communications."""

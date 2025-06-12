@@ -6,12 +6,11 @@ import tkinter as tk
 import threading
 import subprocess
 import signal
-from typing import Optional
-from network.socket_manager import SocketManager
-from network.message_handler import MessageHandler
-from gui.client_gui import ClientGUI
-from utils.constants import DEFAULT_HOST, DEFAULT_PORT
-from utils.logger import Logger
+from src.network.socket_manager import SocketManager
+from src.network.message_handler import MessageHandler
+from src.gui.client_gui import ClientGUI
+from src.utils.constants import DEFAULT_HOST, DEFAULT_PORT
+from src.utils.logger import Logger
 
 class Client:
     """Main client class."""

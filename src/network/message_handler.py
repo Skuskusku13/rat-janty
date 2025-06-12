@@ -2,10 +2,8 @@
 Message handler for processing different types of messages.
 """
 
-import logging
-from typing import Dict, Callable, Any
 import json
-from utils.logger import Logger
+from src.utils.logger import Logger
 
 class MessageHandler:
     def __init__(self, client):

@@ -4,7 +4,7 @@ Command execution functionality.
 
 import subprocess
 from typing import Optional
-from utils.logger import Logger
+from src.utils.logger import Logger
 
 class CommandExecutor:
     """Handles command execution and processing."""

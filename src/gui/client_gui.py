@@ -3,10 +3,9 @@ Client GUI implementation.
 """
 
 import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
-from typing import Optional, Callable
-from utils.constants import CLIENT_WINDOW_SIZE, CLIENT_TITLE
-from utils.logger import Logger, ChatLogger
+from tkinter import ttk, scrolledtext
+from typing import Optional
+from src.utils.logger import Logger, ChatLogger
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -25,6 +24,8 @@ class ClientGUI:
         """
         self.root = root
         self.client = client
+
+        # self.root.iconbitmap("chilli.ico")
         self.root.title("RAT Client")
         self.root.geometry("800x600")
         

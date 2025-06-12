@@ -6,15 +6,14 @@ import socket
 import threading
 import json
 import tkinter as tk
-from tkinter import ttk, scrolledtext
 import subprocess
 import os
 import base64
 from PIL import ImageGrab
 import io
-from gui.client_gui import ClientGUI
-from utils.logger import Logger
-from utils.constants import SERVER_HOST, SERVER_PORT
+from src.gui.client_gui import ClientGUI
+from src.utils.logger import Logger
+from src.utils.constants import SERVER_HOST, SERVER_PORT
 
 class Client:
     def __init__(self):

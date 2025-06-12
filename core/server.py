@@ -5,12 +5,12 @@ Main server implementation.
 import tkinter as tk
 import threading
 import signal
-from typing import Dict, Optional, Tuple
-from network.socket_manager import SocketManager
-from network.message_handler import MessageHandler
-from gui.server_gui import ServerGUI
-from utils.constants import DEFAULT_HOST, DEFAULT_PORT
-from utils.logger import Logger
+from typing import Dict, Tuple
+from src.network.socket_manager import SocketManager
+from src.network.message_handler import MessageHandler
+from src.gui.server_gui import ServerGUI
+from src.utils.constants import DEFAULT_HOST, DEFAULT_PORT
+from src.utils.logger import Logger
 
 class Server:
     """Main server class."""
