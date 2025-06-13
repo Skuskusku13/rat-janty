@@ -80,7 +80,7 @@ class Server:
 
         while self.server_running:
             try:
-                # Lire la taille du message (8 octets)
+                # taille du message (8 octets)
                 raw_length = b''
                 while len(raw_length) < 8:
                     packet = conn.recv(8 - len(raw_length))
@@ -91,7 +91,7 @@ class Server:
                     break
                 message_length = int.from_bytes(raw_length, byteorder='big')
 
-                # Lire le message complet
+                # message complet
                 data = b''
                 while len(data) < message_length:
                     packet = conn.recv(message_length - len(data))
