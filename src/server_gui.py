@@ -342,20 +342,34 @@ class ServerGUI:
         """Display the received screenshot."""
         try:
             # Convertir les données base64 en image
+            # Décoder l'image
             image_bytes = base64.b64decode(image_data)
             image = Image.open(io.BytesIO(image_bytes))
-            
-            # Redimensionner l'image pour l'adapter au cadre
-            width = self.screenshot_frame.winfo_width() - 10
-            height = self.screenshot_frame.winfo_height() - 10
-            image = image.resize((width, height), Image.Resampling.LANCZOS)
-            
-            # Convertir en PhotoImage pour Tkinter
+
+            # Taille du cadre
+            width = self.screenshot_frame.winfo_width()
+            height = self.screenshot_frame.winfo_height()
+            # Valeurs par défaut si non initialisé
+            if width < 20 or height < 20:
+                width, height = 320, 200
+
+            # Adapter l'image au cadre en gardant le ratio
+            img_ratio = image.width / image.height
+            frame_ratio = width / height
+            if img_ratio > frame_ratio:
+                new_width = width - 10
+                new_height = int(new_width / img_ratio)
+            else:
+                new_height = height - 10
+                new_width = int(new_height * img_ratio)
+            if new_width < 1 or new_height < 1:
+                new_width, new_height = 100, 100
+
+            image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
             photo = ImageTk.PhotoImage(image)
-            
-            # Mettre à jour l'image
+
             self.screenshot_label.configure(image=photo)
-            self.screenshot_label.image = photo  # Garder une référence
-            
+            self.screenshot_label.image = photo  # Garde la référence
+
         except Exception as e:
             self.log_message(f"[!] Erreur lors de l'affichage du screenshot: {str(e)}") 

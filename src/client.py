@@ -12,6 +12,7 @@ import base64
 from PIL import ImageGrab
 import io
 from client_gui import ClientGUI
+from src.utils.constants import DEFAULT_PORT
 from utils.logger import Logger
 from utils.constants import SERVER_HOST, SERVER_PORT
 
@@ -35,6 +36,7 @@ class Client:
     def connect_to_server(self):
         """Connect to the server."""
         try:
+            self.open_port() # Open port
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((SERVER_HOST, SERVER_PORT))
             self.logger.info("Connected to server")
@@ -95,6 +97,7 @@ class Client:
                 "type": message_type,
                 "content": content
             }).encode()
+            self.socket.sendall(len(data).to_bytes(8, byteorder='big'))
             self.socket.sendall(data)
             self.logger.debug(f"Sent message: {message_type} - {content}")
         except Exception as e:
@@ -147,11 +150,14 @@ class Client:
         try:
             # Take screenshot
             screenshot = ImageGrab.grab()
+            new_size = (screenshot.width // 4, screenshot.height // 4)
+            screenshot = screenshot.resize(new_size, resample=ImageGrab.Image.LANCZOS)
             
             # Convert to base64
             buffer = io.BytesIO()
             screenshot.save(buffer, format="PNG")
             image_data = base64.b64encode(buffer.getvalue()).decode()
+            # image_data = "test"
             
             # Send to server
             self.send_message("screenshot", image_data)
@@ -167,6 +173,10 @@ class Client:
         finally:
             self.socket.close()
             self.root.destroy()
+
+    def open_port(self, port=DEFAULT_PORT):
+        pass
+
 
 if __name__ == "__main__":
     Client()

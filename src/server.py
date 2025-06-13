@@ -77,31 +77,48 @@ class Server:
     def handle_client(self, client_id, conn, addr):
         """Handle client communication."""
         self.gui.log_message(f"[+] Client {client_id} connected from {addr[0]}:{addr[1]}")
-        
+
         while self.server_running:
             try:
-                data = conn.recv(4096)
+                # Lire la taille du message (8 octets)
+                raw_length = b''
+                while len(raw_length) < 8:
+                    packet = conn.recv(8 - len(raw_length))
+                    if not packet:
+                        break
+                    raw_length += packet
+                if not raw_length:
+                    break
+                message_length = int.from_bytes(raw_length, byteorder='big')
+
+                # Lire le message complet
+                data = b''
+                while len(data) < message_length:
+                    packet = conn.recv(message_length - len(data))
+                    if not packet:
+                        break
+                    data += packet
                 if not data:
                     break
-                
+
                 try:
                     message = json.loads(data.decode())
                     message_type = message.get("type")
                     content = message.get("content")
-                    
+
                     if message_type == "chat":
                         self.gui.log_chat(f"Client {client_id}", content)
                     elif message_type == "response":
                         self.gui.log_message(f"[Client {client_id}] {content}")
                     elif message_type == "screenshot":
-                        self.gui.display_screenshot(client_id, content)
+                        self.gui.display_screenshot(content)
                     elif message_type == "exit":
                         break
-                    
-                except json.JSONDecodeError:
-                    self.gui.log_message(f"[!] Invalid message from client {client_id}")
+
+                except json.JSONDecodeError as e:
+                    self.gui.log_message(f"[!] Invalid message from client {client_id}: {e}")
                     continue
-                
+
             except Exception as e:
                 if self.server_running:
                     self.gui.log_message(f"[!] Error with client {client_id}: {e}")
