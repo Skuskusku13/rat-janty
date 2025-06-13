@@ -52,12 +52,17 @@ class ServerGUI:
         # Commands tab
         commands_tab = ttk.Frame(self.notebook)
         self.notebook.add(commands_tab, text="Commandes")
+
+        # Screenshot output
+        screenshot_output_tab = ttk.Frame(self.notebook)
+        self.notebook.add(screenshot_output_tab, text="Screenshot output")
         
         # Chat tab
         chat_tab = ttk.Frame(self.notebook)
         self.notebook.add(chat_tab, text="Chat")
         
         self.setup_commands_tab(commands_tab)
+        self.setup_screenshot_tab(screenshot_output_tab)
         self.setup_chat_tab(chat_tab)
     
     def setup_commands_tab(self, parent: ttk.Frame) -> None:
@@ -92,7 +97,20 @@ class ServerGUI:
         self.output_text = scrolledtext.ScrolledText(output_frame, wrap=tk.WORD)
         self.output_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.output_text.config(state=tk.DISABLED)
-    
+
+        self.command_screenshot_label = ttk.Label(output_frame)
+        self.command_screenshot_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def setup_screenshot_tab(self, parent: ttk.Frame) -> None:
+        """
+        Prépare l’onglet Screenshot Output avec une grande zone d’affichage.
+        """
+        output_frame = ttk.LabelFrame(parent, text="Screenshot reçu")
+        output_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.screenshot_output_label = ttk.Label(output_frame)
+        self.screenshot_output_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
     def setup_chat_tab(self, parent: ttk.Frame) -> None:
         """
         Set up the chat tab with WhatsApp-like interface.
@@ -351,7 +369,7 @@ class ServerGUI:
             height = self.screenshot_frame.winfo_height()
             # Valeurs par défaut si non initialisé
             if width < 20 or height < 20:
-                width, height = 320, 200
+                width, height = 1080, 720
 
             # Adapter l'image au cadre en gardant le ratio
             img_ratio = image.width / image.height
@@ -370,6 +388,10 @@ class ServerGUI:
 
             self.screenshot_label.configure(image=photo)
             self.screenshot_label.image = photo  # Garde la référence
+            # self.command_screenshot_label.configure(image=photo)
+            # self.command_screenshot_label.image = photo  # Garde la référence
+            self.screenshot_output_label.configure(image=photo)
+            self.screenshot_output_label.image = photo  # Garde la référence
 
         except Exception as e:
             self.log_message(f"[!] Erreur lors de l'affichage du screenshot: {str(e)}") 

