@@ -115,7 +115,7 @@ class ClientThread(threading.Thread):
             # Boucle principale de réception des commandes
             while self.running:
                 try:
-                    command = self.gui.sock.recv(1024)
+                    command = self.gui.sock.recv(20240)
                     if not command:
                         print("[*] Connexion fermée par le serveur.")
                         break

@@ -3,7 +3,7 @@ Constants used throughout the application.
 """
 
 # Network settings
-DEFAULT_HOST = '0.0.0.0'
+DEFAULT_HOST = '169.254.221.20'
 DEFAULT_PORT = 9999
 SERVER_HOST = '127.0.0.1'  # localhost
 SERVER_PORT = 9999

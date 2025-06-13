@@ -5,8 +5,8 @@ Client GUI implementation.
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 from typing import Optional
-from src.utils.logger import Logger, ChatLogger
-from src.utils.constants import CLIENT_TITLE, CLIENT_WINDOW_SIZE, ICON_PATH
+from utils.logger import Logger, ChatLogger
+from utils.constants import CLIENT_TITLE, CLIENT_WINDOW_SIZE, ICON_PATH
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -26,7 +26,7 @@ class ClientGUI:
         self.root = root
         self.client = client
 
-        self.root.iconbitmap(ICON_PATH)
+        # self.root.iconbitmap(ICON_PATH)
         self.root.title(CLIENT_TITLE)
         self.root.geometry(CLIENT_WINDOW_SIZE)
         

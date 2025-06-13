@@ -5,8 +5,8 @@ Server GUI implementation.
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from typing import Dict, Tuple
-from src.utils.logger import Logger
-from src.utils.constants import SERVER_TITLE, SERVER_WINDOW_SIZE, ICON_PATH
+from utils.logger import Logger
+from utils.constants import SERVER_TITLE, SERVER_WINDOW_SIZE, ICON_PATH
 from datetime import datetime
 import base64
 from PIL import Image, ImageTk
@@ -26,7 +26,7 @@ class ServerGUI:
         self.root = root
         self.server = server  # Store server reference
 
-        self.root.iconbitmap(ICON_PATH)
+        # self.root.iconbitmap(ICON_PATH)
         self.root.title(SERVER_TITLE)
         self.root.geometry(SERVER_WINDOW_SIZE)  # Augmenté pour accommoder le nouveau panneau
         
@@ -52,12 +52,17 @@ class ServerGUI:
         # Commands tab
         commands_tab = ttk.Frame(self.notebook)
         self.notebook.add(commands_tab, text="Commandes")
+
+        # Screenshot output
+        screenshot_output_tab = ttk.Frame(self.notebook)
+        self.notebook.add(screenshot_output_tab, text="Screenshot output")
         
         # Chat tab
         chat_tab = ttk.Frame(self.notebook)
         self.notebook.add(chat_tab, text="Chat")
         
         self.setup_commands_tab(commands_tab)
+        self.setup_screenshot_tab(screenshot_output_tab)
         self.setup_chat_tab(chat_tab)
     
     def setup_commands_tab(self, parent: ttk.Frame) -> None:
@@ -92,7 +97,20 @@ class ServerGUI:
         self.output_text = scrolledtext.ScrolledText(output_frame, wrap=tk.WORD)
         self.output_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.output_text.config(state=tk.DISABLED)
-    
+
+        self.command_screenshot_label = ttk.Label(output_frame)
+        self.command_screenshot_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def setup_screenshot_tab(self, parent: ttk.Frame) -> None:
+        """
+        Prépare l’onglet Screenshot Output avec une grande zone d’affichage.
+        """
+        output_frame = ttk.LabelFrame(parent, text="Screenshot reçu")
+        output_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.screenshot_output_label = ttk.Label(output_frame)
+        self.screenshot_output_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
     def setup_chat_tab(self, parent: ttk.Frame) -> None:
         """
         Set up the chat tab with WhatsApp-like interface.
@@ -342,20 +360,38 @@ class ServerGUI:
         """Display the received screenshot."""
         try:
             # Convertir les données base64 en image
+            # Décoder l'image
             image_bytes = base64.b64decode(image_data)
             image = Image.open(io.BytesIO(image_bytes))
-            
-            # Redimensionner l'image pour l'adapter au cadre
-            width = self.screenshot_frame.winfo_width() - 10
-            height = self.screenshot_frame.winfo_height() - 10
-            image = image.resize((width, height), Image.Resampling.LANCZOS)
-            
-            # Convertir en PhotoImage pour Tkinter
+
+            # Taille du cadre
+            width = self.screenshot_frame.winfo_width()
+            height = self.screenshot_frame.winfo_height()
+            # Valeurs par défaut si non initialisé
+            if width < 20 or height < 20:
+                width, height = 1080, 720
+
+            # Adapter l'image au cadre en gardant le ratio
+            img_ratio = image.width / image.height
+            frame_ratio = width / height
+            if img_ratio > frame_ratio:
+                new_width = width - 10
+                new_height = int(new_width / img_ratio)
+            else:
+                new_height = height - 10
+                new_width = int(new_height * img_ratio)
+            if new_width < 1 or new_height < 1:
+                new_width, new_height = 100, 100
+
+            image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
             photo = ImageTk.PhotoImage(image)
-            
-            # Mettre à jour l'image
+
             self.screenshot_label.configure(image=photo)
-            self.screenshot_label.image = photo  # Garder une référence
-            
+            self.screenshot_label.image = photo  # Garde la référence
+            # self.command_screenshot_label.configure(image=photo)
+            # self.command_screenshot_label.image = photo  # Garde la référence
+            self.screenshot_output_label.configure(image=photo)
+            self.screenshot_output_label.image = photo  # Garde la référence
+
         except Exception as e:
             self.log_message(f"[!] Erreur lors de l'affichage du screenshot: {str(e)}") 
